@@ -2,7 +2,7 @@
 /**
  * Plugin Name: BCM Maintenance Mode (Dev/Test)
  * Description: Blocks site front-end for non-admin visitors. Only logged-in administrators can view the site. Shows a customizable maintenance/development page to everyone else.
- * Version: 0.4.1
+ * Version: 0.5.0
  * Author: BCM Network
  * Requires at least: 5.8
  * Requires PHP: 7.4
@@ -26,7 +26,7 @@ final class BCM_Maintenance_Mode {
 
   public static function defaults(): array {
     return [
-      'enabled' => 1,
+      'enabled' => 0,
       'mode' => 'maintenance', // maintenance|development
 
       // Maintenance template
@@ -39,14 +39,22 @@ final class BCM_Maintenance_Mode {
     ];
   }
 
-  public static function get_settings(): array {
-    $raw = get_option(self::OPT_KEY, []);
+  private function get_settings_for_blog(int $blog_id): array {
+    $raw = get_blog_option($blog_id, self::OPT_KEY, []);
     if (!is_array($raw)) $raw = [];
     return array_merge(self::defaults(), $raw);
   }
 
-  private function set_mode(string $mode): void {
-    $s = self::get_settings();
+  private function update_settings_for_blog(int $blog_id, array $settings): void {
+    update_blog_option($blog_id, self::OPT_KEY, $settings);
+  }
+
+  public function get_settings(): array {
+    return $this->get_settings_for_blog(get_current_blog_id());
+  }
+
+  private function set_mode_for_blog(int $blog_id, string $mode): void {
+    $s = $this->get_settings_for_blog($blog_id);
 
     if ($mode === 'online') {
       $s['enabled'] = 0;
@@ -57,7 +65,7 @@ final class BCM_Maintenance_Mode {
       $s['enabled'] = 1;
     }
 
-    update_option(self::OPT_KEY, $s);
+    $this->update_settings_for_blog($blog_id, $s);
   }
 
   public function register_settings(): void {
@@ -110,7 +118,10 @@ final class BCM_Maintenance_Mode {
   }
 
   private function adminbar_switch_url(string $mode): string {
-    $url = add_query_arg(['bcm_mm_set' => $mode], admin_url());
+    $url = add_query_arg([
+      'bcm_mm_set' => $mode,
+      'bcm_mm_blog' => (string) get_current_blog_id(),
+    ], admin_url());
     return wp_nonce_url($url, 'bcm_mm_set');
   }
 
@@ -125,9 +136,11 @@ final class BCM_Maintenance_Mode {
       return;
     }
 
-    $this->set_mode($mode);
+    $blog_id = isset($_GET['bcm_mm_blog']) ? (int) $_GET['bcm_mm_blog'] : get_current_blog_id();
+    if ($blog_id <= 0) { $blog_id = get_current_blog_id(); }
+    $this->set_mode_for_blog($blog_id, $mode);
 
-    wp_safe_redirect(remove_query_arg(['bcm_mm_set', '_wpnonce']));
+    wp_safe_redirect(remove_query_arg(['bcm_mm_set', 'bcm_mm_blog', '_wpnonce']));
     exit;
   }
 
@@ -154,7 +167,7 @@ final class BCM_Maintenance_Mode {
       wp_die('Not allowed');
     }
 
-    $s = self::get_settings();
+    $s = $this->get_settings();
     [$label, $color] = $this->current_mode_label($s);
 
     $tab = isset($_GET['tab']) ? sanitize_key((string)$_GET['tab']) : 'info';
@@ -259,7 +272,7 @@ final class BCM_Maintenance_Mode {
     if (!is_user_logged_in()) return;
     if (!current_user_can('manage_options')) return;
 
-    $s = self::get_settings();
+    $s = $this->get_settings();
     [$label, $color] = $this->current_mode_label($s);
 
     $dot = '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' . esc_attr($color) . ';margin-right:6px;vertical-align:middle"></span>';
@@ -316,7 +329,7 @@ final class BCM_Maintenance_Mode {
   }
 
   public function maybe_block_frontend(): void {
-    $s = self::get_settings();
+    $s = $this->get_settings();
 
     if (empty($s['enabled'])) return; // online
 

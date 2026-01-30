@@ -2,7 +2,7 @@
 /**
  * Plugin Name: BCM Maintenance Mode (Dev/Test)
  * Description: Blocks site front-end for non-admin visitors. Only logged-in administrators can view the site. Shows a customizable maintenance/development page to everyone else.
- * Version: 0.5.0
+ * Version: 0.5.1
  * Author: BCM Network
  * Requires at least: 5.8
  * Requires PHP: 7.4
@@ -40,13 +40,23 @@ final class BCM_Maintenance_Mode {
   }
 
   private function get_settings_for_blog(int $blog_id): array {
-    $raw = get_blog_option($blog_id, self::OPT_KEY, []);
+    // Multisite: per-site option. Single-site: fall back to regular option.
+    if (function_exists('get_blog_option') && is_multisite()) {
+      $raw = get_blog_option($blog_id, self::OPT_KEY, []);
+    } else {
+      $raw = get_option(self::OPT_KEY, []);
+    }
+
     if (!is_array($raw)) $raw = [];
     return array_merge(self::defaults(), $raw);
   }
 
   private function update_settings_for_blog(int $blog_id, array $settings): void {
-    update_blog_option($blog_id, self::OPT_KEY, $settings);
+    if (function_exists('update_blog_option') && is_multisite()) {
+      update_blog_option($blog_id, self::OPT_KEY, $settings);
+    } else {
+      update_option(self::OPT_KEY, $settings);
+    }
   }
 
   public function get_settings(): array {

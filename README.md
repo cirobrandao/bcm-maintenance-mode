@@ -18,3 +18,10 @@ Activate in WordPress.
 
 ## Notes
 - Intended for dev/test. Be careful enabling on production without planning.
+
+---
+
+## PT-BR (Resumo)
+
+Plugin WordPress de manutenção/desenvolvimento para ambientes de teste da **BCM Network**.
+Bloqueia o front-end para visitantes e libera para administradores.

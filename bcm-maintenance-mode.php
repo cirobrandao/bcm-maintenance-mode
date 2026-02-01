@@ -1,11 +1,16 @@
 <?php
 /**
- * Plugin Name: BCM Maintenance Mode (Dev/Test)
- * Description: Blocks site front-end for non-admin visitors. Only logged-in administrators can view the site. Shows a customizable maintenance/development page to everyone else.
- * Version: 0.5.1
- * Author: BCM Network
+ * Plugin Name:       BCM Maintenance Mode
+ * Plugin URI:        https://github.com/cirobrandao/bcm-maintenance-mode
+ * Description:       Blocks site front-end for non-admin visitors. Only logged-in administrators can view the site. Shows a customizable maintenance/development page to everyone else.
+ * Version:           0.5.1
  * Requires at least: 5.8
- * Requires PHP: 7.4
+ * Requires PHP:      7.4
+ * Author:            z/ONE
+ * Author URI:        https://dev.zone.net.br/wordpress
+ * License:           GPL-2.0-or-later
+ * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
+ * Text Domain:       bcm-maintenance-mode
  */
 
 if (!defined('ABSPATH')) exit;
